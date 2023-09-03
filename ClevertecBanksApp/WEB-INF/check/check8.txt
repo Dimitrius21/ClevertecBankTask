@@ -1,0 +1,9 @@
+|        Bank receipt:                              |
+|Number:                                           8|
+|2023-09-02                                 21:01:53|
+|Transaction type:                  Пополнение счета|
+|Sender's bank:                                   - |
+|Recipient's bank:                       Clever-Bank|
+|Sender's account:                                - |
+|Recipient's account:              BY11CLBK181901004|
+|Amount:                                  100,00 BYN|

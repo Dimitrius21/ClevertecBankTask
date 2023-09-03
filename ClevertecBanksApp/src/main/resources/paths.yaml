@@ -1,0 +1,22 @@
+get:
+  /api/bank : bzh.clevertec.bank.controller.BankController, getBankById
+  /api/client : bzh.clevertec.bank.controller.ClientController, getClientById
+  /api/account : bzh.clevertec.bank.controller.AccountController, getAccountById
+  /api/accounts : bzh.clevertec.bank.controller.AccountController,getAllAccount
+  /api/transaction : bzh.clevertec.bank.controller.TransactionController, getTransactionById
+post:
+  /api/bank : bzh.clevertec.bank.controller.BankController, createBank
+  /api/client : bzh.clevertec.bank.controller.ClientController, createClient
+  /api/account : bzh.clevertec.bank.controller.AccountController, createAccount
+  /api/operation/account : bzh.clevertec.bank.controller.OperationController, changeAccount
+  /api/operation/transfer : bzh.clevertec.bank.controller.OperationController, transferMoney
+  /api/operation/statement: bzh.clevertec.bank.controller.OperationController, getBankStatement
+  /api/operation/turnover: bzh.clevertec.bank.controller.OperationController, getBankTurnoverStatement
+delete:
+  /api/bank : bzh.clevertec.bank.controller.BankController, deleteBank
+  /api/client : bzh.clevertec.bank.controller.ClientController, deleteClient
+  /api/account : bzh.clevertec.bank.controller.AccountController, deleteAccount
+put:
+  /api/bank : bzh.clevertec.bank.controller.BankController, updateBank
+  /api/client : bzh.clevertec.bank.controller.ClientController,updateClient
+  /api/account : bzh.clevertec.bank.controller.AccountController, updateAccount

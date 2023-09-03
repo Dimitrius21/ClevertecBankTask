@@ -1,0 +1,9 @@
+|        Bank receipt:                              |
+|Number:                                           7|
+|2023-09-02                                 21:00:21|
+|Transaction type:                    Снятие средств|
+|Sender's bank:                          Clever-Bank|
+|Recipient's bank:                               -  |
+|Sender's account:                 BY11CLBK181901003|
+|Recipient's account:                            -  |
+|Amount:                                  100,00 BYN|
