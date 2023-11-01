@@ -2,9 +2,10 @@ package bzh.clevertec.bank.dao;
 
 import bzh.clevertec.bank.domain.entity.Bank;
 
+import java.sql.Connection;
 import java.util.Optional;
 
-public interface BankAction {
+public interface BankAction extends SettingConnection{
 
     public Optional<Bank> findById(long id);
 

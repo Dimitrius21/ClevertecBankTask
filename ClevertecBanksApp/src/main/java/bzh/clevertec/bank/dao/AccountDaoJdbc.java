@@ -3,6 +3,7 @@ package bzh.clevertec.bank.dao;
 import bzh.clevertec.bank.domain.entity.Account;
 import bzh.clevertec.bank.domain.entity.AccountBankInfo;
 import bzh.clevertec.bank.exception.DBException;
+import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@NoArgsConstructor
 public class AccountDaoJdbc implements AccountAction {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDaoJdbc.class);
@@ -37,15 +39,19 @@ public class AccountDaoJdbc implements AccountAction {
     private static final String FIND_ALL_SQL = "SELECT * FROM accounts";
     private static final String UPDATE_SQL = "UPDATE accounts SET account_number = ?, value = ?, currency_code = ?, bank_id = ?, client_id = ? WHERE id=?";
 
-    private Connection con;
+    private ThreadLocal<Connection> con = new ThreadLocal<>();
 
-    public AccountDaoJdbc(Connection con) {
-        this.con = con;
+    public AccountDaoJdbc(Connection connection) {
+        con.set(connection);
+    }
+
+    public void setConnection(Connection connection) {
+        con.set(connection);
     }
 
     @Override
     public long addSum(Long sum, long accountId) {
-        try (PreparedStatement ps = con.prepareStatement("UPDATE accounts SET value=value + ? WHERE id = ? RETURNING value")) {
+        try (PreparedStatement ps = con.get().prepareStatement("UPDATE accounts SET value=value + ? WHERE id = ? RETURNING value")) {
             ps.setLong(1, sum);
             ps.setLong(2, accountId);
             ResultSet rs = ps.executeQuery();
@@ -61,7 +67,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public long getBalance(long accountId) {
-        try (PreparedStatement ps = con.prepareStatement("SELECT value FROM accounts WHERE id = ? FOR UPDATE")) {
+        try (PreparedStatement ps = con.get().prepareStatement("SELECT value FROM accounts WHERE id = ? FOR UPDATE")) {
             ps.setLong(1, accountId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -76,7 +82,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public Optional<Account> getLastAccount(long bankId, String currency) {
-        try (PreparedStatement ps = con.prepareStatement("SELECT * FROM accounts WHERE currency_code = ? AND bank_id = ? " +
+        try (PreparedStatement ps = con.get().prepareStatement("SELECT * FROM accounts WHERE currency_code = ? AND bank_id = ? " +
                 "ORDER BY create_date DESC LIMIT 1")) {
             ps.setString(1, currency);
             ps.setLong(2, bankId);
@@ -95,7 +101,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public Optional<Account> findById(long id) {
-        try (PreparedStatement st = con.prepareStatement(FIND_BY_ID_SQL)) {
+        try (PreparedStatement st = con.get().prepareStatement(FIND_BY_ID_SQL)) {
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
@@ -114,7 +120,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public Optional<AccountBankInfo> findByNumber(String accountNumber, String bankCode) {
-        try (PreparedStatement st = con.prepareStatement(FIND_BY_NUMBER_SQL)) {
+        try (PreparedStatement st = con.get().prepareStatement(FIND_BY_NUMBER_SQL)) {
             st.setString(1, accountNumber);
             st.setString(2, bankCode);
             ResultSet rs = st.executeQuery();
@@ -134,7 +140,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public List<Account> findByClientId(long clientId) {
-        try (PreparedStatement st = con.prepareStatement(FIND_BY_CLIENT_ID_SQL)) {
+        try (PreparedStatement st = con.get().prepareStatement(FIND_BY_CLIENT_ID_SQL)) {
             st.setLong(1, clientId);
             logger.info("Get the list of client's accounts with id {}", clientId);
             ResultSet rs = st.executeQuery();
@@ -147,7 +153,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public Account save(Account account) {
-        try (PreparedStatement ps = con.prepareStatement(CREATE_SQL, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = con.get().prepareStatement(CREATE_SQL, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, account.getAccountNumber());
             ps.setLong(2, account.getValue());
             ps.setString(3, account.getCurrencyCode());
@@ -169,7 +175,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public int update(Account account) {
-        try (PreparedStatement ps = con.prepareStatement(UPDATE_SQL)) {
+        try (PreparedStatement ps = con.get().prepareStatement(UPDATE_SQL)) {
             ps.setString(1, account.getAccountNumber());
             ps.setLong(2, account.getValue());
             ps.setString(3, account.getCurrencyCode());
@@ -187,7 +193,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public void delete(long id) {
-        try (PreparedStatement ps = con.prepareStatement(DELETE_SQL)) {
+        try (PreparedStatement ps = con.get().prepareStatement(DELETE_SQL)) {
             ps.setLong(1, id);
             logger.info("Account with id = {} has been deleted", id);
             ps.execute();
@@ -199,7 +205,7 @@ public class AccountDaoJdbc implements AccountAction {
 
     @Override
     public List<Account> findAll(String pageable) {
-        try (PreparedStatement st = con.prepareStatement(FIND_ALL_SQL + pageable)) {
+        try (PreparedStatement st = con.get().prepareStatement(FIND_ALL_SQL + pageable)) {
             ResultSet rs = st.executeQuery();
             return getAccontsList(rs);
         } catch (SQLException ex) {

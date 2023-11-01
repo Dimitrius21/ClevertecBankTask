@@ -1,5 +1,6 @@
 package bzh.clevertec.bank.controller;
 
+import bzh.clevertec.bank.dao.AccountDaoJdbc;
 import bzh.clevertec.bank.domain.RequestBody;
 import bzh.clevertec.bank.domain.RequestParam;
 import bzh.clevertec.bank.domain.ResponseBody;
@@ -19,7 +20,7 @@ public class AccountController {
 
     public AccountController(ConnectionSupplier connectionSupplier) {
         this.connectionSupplier = connectionSupplier;
-        service = new AccountService(connectionSupplier);
+        service = new AccountService(connectionSupplier, new AccountDaoJdbc());
     }
 
     public ResponseBody getAccountById(RequestParam params) {

@@ -2,7 +2,6 @@ package bzh.clevertec.bank.service;
 
 import bzh.clevertec.bank.annotation.AJLogging;
 import bzh.clevertec.bank.dao.ClientAction;
-import bzh.clevertec.bank.dao.ClientDaoJdbc;
 import bzh.clevertec.bank.domain.entity.Client;
 import bzh.clevertec.bank.exception.DBException;
 import bzh.clevertec.bank.exception.InvalidRequestDataException;
@@ -21,9 +20,11 @@ import java.util.Optional;
 public class ClientService {
 
     private ConnectionSupplier connectionSupplier;
+    private ClientAction clientDao;
 
-    public ClientService(ConnectionSupplier connectionSupplier) {
+    public ClientService(ConnectionSupplier connectionSupplier, ClientAction clientDao) {
         this.connectionSupplier = connectionSupplier;
+        this.clientDao = clientDao;
     }
 
     /**
@@ -34,7 +35,7 @@ public class ClientService {
     @AJLogging
     public Client getClientById(long id) {
         Connection con = connectionSupplier.getConnection();
-        ClientAction clientDao = new ClientDaoJdbc(con);
+        clientDao.setConnection(con);
         Optional<Client> bank;
         try {
             con.setAutoCommit(true);
@@ -56,7 +57,7 @@ public class ClientService {
     @AJLogging
     public Client createClient(Client client) {
         Connection con = connectionSupplier.getConnection();
-        ClientAction clientDao = new ClientDaoJdbc(con);
+        clientDao.setConnection(con);
         try {
             client.setCreateDate(LocalDateTime.now());
             con.setAutoCommit(true);
@@ -77,7 +78,7 @@ public class ClientService {
     @AJLogging
     public void deleteClientById(long id) {
         Connection con = connectionSupplier.getConnection();
-        ClientAction clientDao = new ClientDaoJdbc(con);
+        clientDao.setConnection(con);
         try {
             con.setAutoCommit(true);
             clientDao.delete(id);
@@ -97,7 +98,7 @@ public class ClientService {
     @AJLogging
     public Client updateClient(Client client) {
         Connection con = connectionSupplier.getConnection();
-        ClientAction clientDao = new ClientDaoJdbc(con);
+        clientDao.setConnection(con);
         try {
             long id = client.getId();
             Client clientForUpdate = clientDao.findById(id).orElseThrow(() -> {

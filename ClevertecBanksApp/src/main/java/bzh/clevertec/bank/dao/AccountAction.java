@@ -6,7 +6,7 @@ import bzh.clevertec.bank.domain.entity.AccountBankInfo;
 import java.util.List;
 import java.util.Optional;
 
-public interface AccountAction {
+public interface AccountAction extends SettingConnection{
 
     public Optional<Account> getLastAccount(long bankId, String currency);
 

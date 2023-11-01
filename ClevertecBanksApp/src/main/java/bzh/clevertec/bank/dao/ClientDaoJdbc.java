@@ -2,6 +2,8 @@ package bzh.clevertec.bank.dao;
 
 import bzh.clevertec.bank.domain.entity.Client;
 import bzh.clevertec.bank.exception.DBException;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,19 +16,24 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+@NoArgsConstructor
 public class ClientDaoJdbc implements ClientAction {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientDaoJdbc.class);
+    private static ThreadLocal<Connection> con = new ThreadLocal<>();
 
-    private Connection con;
+    public ClientDaoJdbc(Connection connection) {
+        con.set(connection);
+    }
 
-    public ClientDaoJdbc(Connection con) {
-        this.con = con;
+    @Override
+    public void setConnection(Connection connection) {
+        con.set(connection);
     }
 
     @Override
     public Optional<Client> findById(long id) {
-        try (PreparedStatement st = con.prepareStatement("SELECT * FROM clients WHERE id = ?")) {
+        try (PreparedStatement st = con.get().prepareStatement("SELECT * FROM clients WHERE id = ?")) {
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
@@ -45,7 +52,7 @@ public class ClientDaoJdbc implements ClientAction {
     public Client save(Client client) {
         final String createSQL = "INSERT INTO clients (first_name, second_name, surname, passport_number, create_date) " +
                 "VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = con.prepareStatement(createSQL, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = con.get().prepareStatement(createSQL, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, client.getFirstName());
             ps.setString(2, client.getSecondName());
             ps.setString(3, client.getSurname());
@@ -65,7 +72,7 @@ public class ClientDaoJdbc implements ClientAction {
     @Override
     public int update(Client client) {
         final String updateSQL = "UPDATE clients SET first_name = ?, second_name = ?, surname = ?, passport_number = ? WHERE id = ?";
-        try (PreparedStatement ps = con.prepareStatement(updateSQL)) {
+        try (PreparedStatement ps = con.get().prepareStatement(updateSQL)) {
             ps.setString(1, client.getFirstName());
             ps.setString(2, client.getSecondName());
             ps.setString(3, client.getSurname());
@@ -81,7 +88,7 @@ public class ClientDaoJdbc implements ClientAction {
     @Override
     public void delete(long id) {
         final String deleteSQL = "DELETE FROM clients WHERE id = ?";
-        try (PreparedStatement ps = con.prepareStatement(deleteSQL)) {
+        try (PreparedStatement ps = con.get().prepareStatement(deleteSQL)) {
             ps.setLong(1, id);
             ps.execute();
         } catch (SQLException e) {

@@ -15,6 +15,7 @@ import bzh.clevertec.bank.exception.InvalidRequestDataException;
 import bzh.clevertec.bank.util.Check;
 import bzh.clevertec.bank.util.ConnectionSupplier;
 import bzh.clevertec.bank.util.OperationType;
+import lombok.AllArgsConstructor;
 
 import javax.servlet.http.HttpServletRequest;
 import java.sql.Connection;
@@ -25,13 +26,12 @@ import java.util.Objects;
 /**
  * Класс уровня сервис для основных операций над счетом
  */
+@AllArgsConstructor
 public class OperationService {
 
     private ConnectionSupplier connectionSupplier;
-
-    public OperationService(ConnectionSupplier connectionSupplier) {
-        this.connectionSupplier = connectionSupplier;
-    }
+    private AccountAction accountDao;
+    private TransactionAction transactionDao;
 
     /**
      * Метод реализующий одностороннюю операцию пополнения счета или снятия средств со счета
@@ -48,7 +48,7 @@ public class OperationService {
         Connection con = connectionSupplier.getConnection();
         try {
             con.setAutoCommit(false);
-            AccountAction accountDao = new AccountDaoJdbc(con);
+            accountDao.setConnection(con);
             AccountBankInfo account = accountDao.findByNumber(operationDto.getAccountNumber(), operationDto.getBankCode())
                     .orElseThrow(() -> new InvalidRequestDataException("Such account does not exist"));
             con.commit();
@@ -66,7 +66,8 @@ public class OperationService {
                 long amount = operationDto.getSum();
                 long balanceTo = 0;
                 long balanceFrom = 0;
-                TransactionAction transactionDao = new TransactionDaoJdbc(con);
+                //TransactionAction transactionDao = new TransactionDaoJdbc(con);
+                transactionDao.setConnection(con);
                 if (OperationType.ADDING.ordinal() == operationDto.getType()) {
                     builder.accountIdTo(account.getId()).accountIdFrom(0);
                     balanceTo = accountDao.addSum(operationDto.getSum(), account.getId());
@@ -123,7 +124,7 @@ public class OperationService {
         Connection con = connectionSupplier.getConnection();
         try {
             con.setAutoCommit(false);
-            AccountAction accountDao = new AccountDaoJdbc(con);
+            accountDao.setConnection(con);
             AccountBankInfo accountFrom = accountDao.findByNumber(operationDto.getAccountNumberFrom(), operationDto.getBankCodeFrom())
                     .orElseThrow(() -> new InvalidRequestDataException("Such account does not exist"));
             AccountBankInfo accountTo = accountDao.findByNumber(operationDto.getAccountNumberTo(), operationDto.getBankCodeTo())
@@ -142,8 +143,10 @@ public class OperationService {
                         .accountIdTo(accountTo.getId())
                         .accountIdFrom(accountFrom.getId());
                 long balanceAccountFrom = accountDao.getBalance(accountFrom.getId());
+                boolean hasEnoughMoney = true;
                 if (balanceAccountFrom < operationDto.getSum()) {
                     responseMessage = "Haven't enough money for transfer";
+                    hasEnoughMoney = false;
                 } else {
                     long balanceFrom = accountDao.addSum(operationDto.getSum() * (-1), accountFrom.getId());
                     long balanceTo = accountDao.addSum(operationDto.getSum(), accountTo.getId());
@@ -151,12 +154,14 @@ public class OperationService {
                             .balanceFrom(balanceFrom)
                             .balanceTo(balanceTo);
                     transaction = builder.build();
-                    TransactionAction transactionDao = new TransactionDaoJdbc(con);
+                    transactionDao.setConnection(con);
                     transaction = transactionDao.save(transaction);
                 }
                 con.commit();
-                Check check = new Check(req.getServletContext().getRealPath("/"));
-                check.saveCheck(transaction, accountFrom, accountTo);
+                if (hasEnoughMoney) {
+                    Check check = new Check(req.getServletContext().getRealPath("/"));
+                    check.saveCheck(transaction, accountFrom, accountTo);
+                }
             } else {
                 responseCode = 400;
                 responseMessage = "Invalid input data";

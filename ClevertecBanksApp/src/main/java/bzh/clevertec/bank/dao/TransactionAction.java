@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface TransactionAction {
+public interface TransactionAction extends SettingConnection{
 
     public Optional<Transaction> findById(long id);
 

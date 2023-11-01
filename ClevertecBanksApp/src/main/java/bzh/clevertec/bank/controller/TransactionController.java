@@ -1,5 +1,6 @@
 package bzh.clevertec.bank.controller;
 
+import bzh.clevertec.bank.dao.TransactionDaoJdbc;
 import bzh.clevertec.bank.domain.RequestParam;
 import bzh.clevertec.bank.domain.ResponseBody;
 import bzh.clevertec.bank.domain.entity.Transaction;
@@ -15,7 +16,7 @@ public class TransactionController {
 
     public TransactionController(ConnectionSupplier connectionSupplier) {
         this.connectionSupplier = connectionSupplier;
-        service = new TransactionService(connectionSupplier);
+        service = new TransactionService(connectionSupplier, new TransactionDaoJdbc());
     }
 
     public ResponseBody getTransactionById(RequestParam params) {

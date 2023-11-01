@@ -2,6 +2,7 @@ package bzh.clevertec.bank.dao;
 
 import bzh.clevertec.bank.domain.entity.Bank;
 import bzh.clevertec.bank.exception.DBException;
+import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,19 +13,24 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Optional;
 
+@NoArgsConstructor
 public class BankDaoJdbc implements BankAction {
 
     private static final Logger logger = LoggerFactory.getLogger(BankDaoJdbc.class);
+    private static ThreadLocal<Connection> con = new ThreadLocal<>();
 
-    private Connection con;
+    public BankDaoJdbc(Connection connection) {
+        con.set(connection);
+    }
 
-    public BankDaoJdbc(Connection con) {
-        this.con = con;
+    @Override
+    public void setConnection(Connection connection) {
+        con.set(connection);
     }
 
     @Override
     public Optional<Bank> findById(long id) {
-        try (PreparedStatement st = con.prepareStatement("SELECT * FROM banks WHERE id = ?")) {
+        try (PreparedStatement st = con.get().prepareStatement("SELECT * FROM banks WHERE id = ?")) {
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
@@ -41,7 +47,7 @@ public class BankDaoJdbc implements BankAction {
 
     @Override
     public Optional<Bank> findByCode(String bankCode) {
-        try (PreparedStatement st = con.prepareStatement("SELECT * FROM banks WHERE code = bankCode")) {
+        try (PreparedStatement st = con.get().prepareStatement("SELECT * FROM banks WHERE bank_code = ?")) {
             st.setString(1, bankCode);
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
@@ -65,7 +71,7 @@ public class BankDaoJdbc implements BankAction {
     @Override
     public Bank save(Bank bank) {
         final String createSQL = "INSERT INTO banks (bank_code, bank_name, address) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = con.prepareStatement(createSQL, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = con.get().prepareStatement(createSQL, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, bank.getBankCode());
             ps.setString(2, bank.getBankName());
             ps.setString(3, bank.getAddress());
@@ -83,7 +89,7 @@ public class BankDaoJdbc implements BankAction {
     @Override
     public int update(Bank bank) {
         final String updateSQL = "UPDATE banks SET bank_code = ?, bank_name = ?, address = ? WHERE id = ?";
-        try (PreparedStatement ps = con.prepareStatement(updateSQL)) {
+        try (PreparedStatement ps = con.get().prepareStatement(updateSQL)) {
             ps.setString(1, bank.getBankCode());
             ps.setString(2, bank.getBankName());
             ps.setString(3, bank.getAddress());
@@ -98,7 +104,7 @@ public class BankDaoJdbc implements BankAction {
     @Override
     public void delete(long id) {
         final String deleteSQL = "DELETE FROM banks WHERE id = ?";
-        try (PreparedStatement ps = con.prepareStatement(deleteSQL)) {
+        try (PreparedStatement ps = con.get().prepareStatement(deleteSQL)) {
             ps.setLong(1, id);
             ps.execute();
         } catch (SQLException e) {

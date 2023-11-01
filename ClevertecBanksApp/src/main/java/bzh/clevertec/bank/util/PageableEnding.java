@@ -22,7 +22,7 @@ public class PageableEnding {
      * @param clazz - Class для сущности данные которой будут извлекаться из БД
      * @return
      */
-    public static String createSqlPaging(RequestParam param, Class<?> clazz) {
+    public static String createSqlPaging(RequestParam param, Class<?> clazz) throws InvalidRequestDataException {
         StringBuffer buffer = new StringBuffer();
         List<String> pageParam = param.getParam("page");
         List<String> sizeParam = param.getParam("size");

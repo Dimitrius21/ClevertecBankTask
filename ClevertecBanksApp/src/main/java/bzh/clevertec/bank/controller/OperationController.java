@@ -1,5 +1,7 @@
 package bzh.clevertec.bank.controller;
 
+import bzh.clevertec.bank.dao.AccountDaoJdbc;
+import bzh.clevertec.bank.dao.TransactionDaoJdbc;
 import bzh.clevertec.bank.domain.RequestBody;
 import bzh.clevertec.bank.domain.ResponseBody;
 import bzh.clevertec.bank.domain.SimpleResponseBody;
@@ -38,8 +40,8 @@ public class OperationController {
 
     public OperationController(ConnectionSupplier connectionSupplier) {
         this.connectionSupplier = connectionSupplier;
-        service = new OperationService(connectionSupplier);
-        statementService = new StatementService(connectionSupplier);
+        service = new OperationService(connectionSupplier, new AccountDaoJdbc(), new TransactionDaoJdbc());
+        statementService = new StatementService(connectionSupplier, new AccountDaoJdbc(), new TransactionDaoJdbc());
     }
 
     public ResponseBody changeAccount(RequestBody body, HttpServletRequest req) {

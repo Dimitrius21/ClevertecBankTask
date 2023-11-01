@@ -4,6 +4,8 @@ import bzh.clevertec.bank.domain.dto.ExtendTransactionData;
 import bzh.clevertec.bank.domain.entity.Transaction;
 import bzh.clevertec.bank.exception.DBException;
 import bzh.clevertec.bank.util.OperationType;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@NoArgsConstructor
 public class TransactionDaoJdbc implements TransactionAction {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionDaoJdbc.class);
@@ -47,15 +50,20 @@ public class TransactionDaoJdbc implements TransactionAction {
                     HAVING account_id_to = ?)
             """;
 
-    private Connection con;
+    private static ThreadLocal<Connection> con = new ThreadLocal<>();
 
-    public TransactionDaoJdbc(Connection con) {
-        this.con = con;
+    public TransactionDaoJdbc(Connection connection) {
+        con.set(connection);
+    }
+
+    @Override
+    public void setConnection(Connection connection) {
+        con.set(connection);
     }
 
     @Override
     public Optional<Transaction> findById(long id) {
-        try (PreparedStatement st = con.prepareStatement(FIND_BY_ID_SQL)) {
+        try (PreparedStatement st = con.get().prepareStatement(FIND_BY_ID_SQL)) {
             st.setLong(1, id);
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
@@ -73,7 +81,7 @@ public class TransactionDaoJdbc implements TransactionAction {
 
     @Override
     public List<ExtendTransactionData> getAccountTransactionDuring(long account_id, LocalDateTime from, LocalDateTime to) {
-        try (PreparedStatement st = con.prepareStatement(FIND_TRANSACTION_PERIOD_SQL)) {
+        try (PreparedStatement st = con.get().prepareStatement(FIND_TRANSACTION_PERIOD_SQL)) {
             st.setLong(1, account_id);
             st.setLong(2, account_id);
             st.setTimestamp(3, Timestamp.valueOf(from));
@@ -88,7 +96,7 @@ public class TransactionDaoJdbc implements TransactionAction {
 
     @Override
     public List<Long> getTurnover(long account_id, LocalDateTime from, LocalDateTime to) {
-        try (PreparedStatement st = con.prepareStatement(TURNOVER_SQL)) {
+        try (PreparedStatement st = con.get().prepareStatement(TURNOVER_SQL)) {
             st.setTimestamp(1, Timestamp.valueOf(from));
             st.setTimestamp(2, Timestamp.valueOf(to));
             st.setLong(3, account_id);
@@ -118,7 +126,7 @@ public class TransactionDaoJdbc implements TransactionAction {
 
     @Override
     public Transaction save(Transaction transaction) {
-        try (PreparedStatement ps = con.prepareStatement(CREATE_SQL, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = con.get().prepareStatement(CREATE_SQL, Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, transaction.getAccountIdFrom());
             ps.setLong(2, transaction.getBalanceFrom());
             ps.setLong(3, transaction.getAccountIdTo());
@@ -140,7 +148,7 @@ public class TransactionDaoJdbc implements TransactionAction {
 
     @Override
     public void delete(long id) {
-        try (PreparedStatement ps = con.prepareStatement(DELETE_BY_ID_SQL)) {
+        try (PreparedStatement ps = con.get().prepareStatement(DELETE_BY_ID_SQL)) {
             ps.setLong(1, id);
             ps.execute();
         } catch (SQLException e) {
@@ -156,7 +164,7 @@ public class TransactionDaoJdbc implements TransactionAction {
         return transactions;
     }
 
-    public List<ExtendTransactionData> getExtTransactionsList(ResultSet rs) throws SQLException {
+    private  List<ExtendTransactionData> getExtTransactionsList(ResultSet rs) throws SQLException {
         List<ExtendTransactionData> extTransactions = new ArrayList<>();
         while (rs.next()) {
             extTransactions.add(getExtTransactionFromResult(rs));
@@ -169,7 +177,7 @@ public class TransactionDaoJdbc implements TransactionAction {
                 id(rs.getLong("id")).
                 accountIdFrom(rs.getLong("account_id_from")).
                 balanceFrom(rs.getLong("balance_from")).
-                accountIdTo(rs.getLong("account_to")).
+                accountIdTo(rs.getLong("account_id_to")).
                 balanceTo(rs.getLong("balance_to")).
                 sum(rs.getLong("sum")).
                 currencyCode(rs.getString("currency_code")).
@@ -179,7 +187,7 @@ public class TransactionDaoJdbc implements TransactionAction {
         return transaction;
     }
 
-    public ExtendTransactionData getExtTransactionFromResult(ResultSet rs) throws SQLException {
+    private ExtendTransactionData getExtTransactionFromResult(ResultSet rs) throws SQLException {
         ExtendTransactionData.ExtendTransactionDataBuilder builder = ExtendTransactionData.builder().
                 id(rs.getLong("id"))
                 .nameFrom(rs.getString("name_send"))

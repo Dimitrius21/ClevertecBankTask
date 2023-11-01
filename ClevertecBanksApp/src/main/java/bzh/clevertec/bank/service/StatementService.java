@@ -12,6 +12,7 @@ import bzh.clevertec.bank.exception.DBException;
 import bzh.clevertec.bank.exception.InvalidRequestDataException;
 import bzh.clevertec.bank.util.ConnectionSupplier;
 import bzh.clevertec.bank.util.OperationType;
+import lombok.AllArgsConstructor;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -21,13 +22,12 @@ import java.util.List;
 /**
  * Класс уровня сервис для получения выписок по счету
  */
+@AllArgsConstructor
 public class StatementService {
 
     private ConnectionSupplier connectionSupplier;
-
-    public StatementService(ConnectionSupplier connectionSupplier) {
-        this.connectionSupplier = connectionSupplier;
-    }
+    private AccountAction accountDao;
+    private TransactionAction transactionDao;
 
     /**
      * Метод формирует выписку с полной информацией о движении средств за указанный период
@@ -43,7 +43,8 @@ public class StatementService {
     public BankStatement getBankStatement(String account, String bank_code, LocalDateTime from, LocalDateTime to) throws DBException {
         Connection con = connectionSupplier.getConnection();
         try {
-            AccountAction accountDao = new AccountDaoJdbc(con);
+            //AccountAction accountDao = new AccountDaoJdbc(con);
+            accountDao.setConnection(con);
             BankStatement statement = new BankStatement();
             con.setAutoCommit(false);
 
@@ -60,7 +61,8 @@ public class StatementService {
             statement.setDate(LocalDateTime.now());
             statement.setOwner(accountBankInfo.getClientFullName());
 
-            TransactionAction transactionDao = new TransactionDaoJdbc(con);
+            //TransactionAction transactionDao = new TransactionDaoJdbc(con);
+            transactionDao.setConnection(con);
             List<ExtendTransactionData> extTransactions = transactionDao.getAccountTransactionDuring(accountBankInfo.getId(),
                     from, to);
             con.commit();
@@ -99,7 +101,8 @@ public class StatementService {
     public BankStatement getBankTurnOverStatement(String account, String bank_code, LocalDateTime from, LocalDateTime to) throws DBException {
         Connection con = connectionSupplier.getConnection();
         try {
-            AccountAction accountDao = new AccountDaoJdbc(con);
+            //AccountAction accountDao = new AccountDaoJdbc(con);
+            accountDao.setConnection(con);
             BankStatement statement = new BankStatement();
             con.setAutoCommit(false);
 
@@ -118,7 +121,8 @@ public class StatementService {
 
             long balance = accountDao.getBalance(accountBankInfo.getId());
             con.commit();
-            TransactionAction transactionDao = new TransactionDaoJdbc(con);
+            //TransactionAction transactionDao = new TransactionDaoJdbc(con);
+            transactionDao.setConnection(con);
             statement.setBalance(balance);
             List<Long> turnovers = transactionDao.getTurnover(accountBankInfo.getId(), from, to);
             con.commit();

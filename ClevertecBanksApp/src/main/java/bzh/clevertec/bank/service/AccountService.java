@@ -9,6 +9,7 @@ import bzh.clevertec.bank.exception.DBException;
 import bzh.clevertec.bank.exception.InvalidRequestDataException;
 import bzh.clevertec.bank.util.ConnectionSupplier;
 import bzh.clevertec.bank.util.PageableEnding;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.Connection;
@@ -21,13 +22,11 @@ import java.util.Optional;
  * Класс реализующий слой Service для сущности Account
  */
 @Slf4j
+@AllArgsConstructor
 public class AccountService {
 
     private ConnectionSupplier connectionSupplier;
-
-    public AccountService(ConnectionSupplier connectionSupplier) {
-        this.connectionSupplier = connectionSupplier;
-    }
+    private AccountAction accountDao;
 
     /**
      * Получить account по его id  в БД
@@ -37,7 +36,7 @@ public class AccountService {
     @AJLogging
     public Account getAccountById(long id) {
         Connection con = connectionSupplier.getConnection();
-        AccountAction accountDao = new AccountDaoJdbc(con);
+        accountDao.setConnection(con);
         Optional<Account> account;
         try {
             con.setAutoCommit(true);
@@ -58,7 +57,7 @@ public class AccountService {
     @AJLogging
     public void deleteAccountById(long id) {
         Connection con = connectionSupplier.getConnection();
-        AccountAction accountDao = new AccountDaoJdbc(con);
+        accountDao.setConnection(con);
         try {
             con.setAutoCommit(true);
             accountDao.delete(id);
@@ -78,7 +77,7 @@ public class AccountService {
     @AJLogging
     public Account createAccount(Account account) {
         Connection con = connectionSupplier.getConnection();
-        AccountAction accountDao = new AccountDaoJdbc(con);
+        accountDao.setConnection(con);
         String currencyCode = account.getCurrencyCode();
         long bankId = account.getBankId();
         Account lastAccount = accountDao.getLastAccount(bankId, currencyCode)
@@ -111,7 +110,7 @@ public class AccountService {
     public List<Account> getAllAccount(RequestParam param) {
         String pageable = PageableEnding.createSqlPaging(param, Account.class);
         Connection con = connectionSupplier.getConnection();
-        AccountAction accountDao = new AccountDaoJdbc(con);
+        accountDao.setConnection(con);
         try {
             con.setAutoCommit(true);
             List<Account> accounts = accountDao.findAll(pageable);
@@ -132,7 +131,7 @@ public class AccountService {
     @AJLogging
     public Account updateAccount(Account account) {
         Connection con = connectionSupplier.getConnection();
-        AccountAction accountDao = new AccountDaoJdbc(con);
+        accountDao.setConnection(con);
         try {
             long id = account.getId();
             Account accountForUpdate = accountDao.findById(id).orElseThrow(() -> {

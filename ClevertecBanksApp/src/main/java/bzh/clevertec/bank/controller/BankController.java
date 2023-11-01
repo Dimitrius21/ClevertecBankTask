@@ -1,5 +1,6 @@
 package bzh.clevertec.bank.controller;
 
+import bzh.clevertec.bank.dao.BankDaoJdbc;
 import bzh.clevertec.bank.domain.RequestBody;
 import bzh.clevertec.bank.domain.RequestParam;
 import bzh.clevertec.bank.domain.ResponseBody;
@@ -15,11 +16,11 @@ import java.util.List;
 public class BankController {
 
     private ConnectionSupplier connectionSupplier;
-    BankService service;
+    private BankService service;
 
     public BankController(ConnectionSupplier connectionSupplier) {
         this.connectionSupplier = connectionSupplier;
-        service = new BankService(connectionSupplier);
+        service = new BankService(connectionSupplier, new BankDaoJdbc());
     }
 
     public ResponseBody getBankById(RequestParam params) {

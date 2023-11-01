@@ -4,7 +4,7 @@ import bzh.clevertec.bank.domain.entity.Client;
 
 import java.util.Optional;
 
-public interface ClientAction {
+public interface ClientAction extends SettingConnection{
 
     public Optional<Client> findById(long id);
 
@@ -13,5 +13,4 @@ public interface ClientAction {
     public int update(Client client);
 
     public void delete(long id);
-
 }
