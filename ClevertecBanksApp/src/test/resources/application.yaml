@@ -1,0 +1,12 @@
+db:
+  driver : org.postgresql.Driver
+#  url : jdbc:postgresql://db:5432/bankapp
+  url : jdbc:postgresql://localhost:5432/bankapp
+  user : postgres
+  password : 1234
+  schema : schema.sql
+  data : data.sql
+  connectionNumber : 3
+bank_interest: 2
+
+
